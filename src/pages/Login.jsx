@@ -9,12 +9,16 @@ function Login() {
   const handleSubmit = (e) => {
     e.preventDefault();
     // Logique de connexion (validation simple ici, à remplacer par une API réelle)
-    if ((email === 'test@example.com' && password === 'password ') || true) {
-      alert('Connexion réussie !');
+    if ((email === 'test@example.com' && password === 'password') || true) {
+      // alert('Connexion réussie !');
       navigate('/personal'); // Rediriger vers la page personnelle
     } else {
       alert('Email ou mot de passe incorrect.');
     }
+  };
+
+  const handleBack = () => {
+    navigate(-1); // Retourner à la page précédente
   };
 
   return (
@@ -45,9 +49,36 @@ function Login() {
             required
           />
         </div>
-        <button type="submit" style={{ padding: '10px 20px', fontSize: '16px', cursor: 'pointer' }}>
-          Se connecter
-        </button>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <button
+            type="button"
+            onClick={handleBack}
+            style={{
+              padding: '10px 20px',
+              fontSize: '16px',
+              cursor: 'pointer',
+              backgroundColor: '#f5f5f5',
+              border: '1px solid #ccc',
+              borderRadius: '5px',
+            }}
+          >
+            Retour
+          </button>
+          <button
+            type="submit"
+            style={{
+              padding: '10px 20px',
+              fontSize: '16px',
+              cursor: 'pointer',
+              backgroundColor: '#4caf50',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '5px',
+            }}
+          >
+            Se connecter
+          </button>
+        </div>
       </form>
     </div>
   );
