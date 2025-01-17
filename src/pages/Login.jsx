@@ -9,7 +9,7 @@ function Login() {
   const handleSubmit = (e) => {
     e.preventDefault();
     // Logique de connexion (validation simple ici, à remplacer par une API réelle)
-    if (email === 'test@example.com' && password === 'password') {
+    if ((email === 'test@example.com' && password === 'password ') || true) {
       alert('Connexion réussie !');
       navigate('/personal'); // Rediriger vers la page personnelle
     } else {
