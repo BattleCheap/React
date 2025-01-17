@@ -7,11 +7,35 @@ function PointsCube({ onPositionChange, onPositionSelect, onTargetSelect }) {
   const spacing = 1; // Espacement entre les points
   const [activePoint, setActivePoint] = useState([0, 0, 0]); // Point actif
   const [hoveredPoint, setHoveredPoint] = useState(null); // Point survolé par la souris
-  const [selectedPoint, setSelectedPoint] = useState(null); // Point sélectionné
-  const [targetPoint, setTargetPoint] = useState(null); // Cible sélectionnée
+  const [selectedPoint, setSelectedPoint] = useState(null); // Point sélectionné (vert)
+  const [targetPoint, setTargetPoint] = useState(null); // Cible sélectionnée (rouge)
+  const [highlightedLine, setHighlightedLine] = useState([]); // Points jaunes sur la ligne
   const [phase, setPhase] = useState(1); // Phase actuelle : 1 = Sélection, 2 = Suivi
 
-  // Gestion des touches pour déplacer le point actif
+  // Calcule les points entre deux positions
+  const calculateLine = (start, end) => {
+    if (!start || !end) return [];
+    const [x1, y1, z1] = start;
+    const [x2, y2, z2] = end;
+
+    const path = [];
+    const steps = Math.max(
+      Math.abs(x2 - x1),
+      Math.abs(y2 - y1),
+      Math.abs(z2 - z1)
+    );
+
+    for (let i = 1; i <= steps; i++) {
+      const x = x1 + ((x2 - x1) / steps) * i;
+      const y = y1 + ((y2 - y1) / steps) * i;
+      const z = z1 + ((z2 - z1) / steps) * i;
+      path.push([Math.round(x), Math.round(y), Math.round(z)]);
+    }
+
+    return path;
+  };
+
+  // Gestion des touches pour déplacer le point actif (bleu)
   useEffect(() => {
     const handleKeyDown = (event) => {
       if (phase === 1 && !selectedPoint) {
@@ -52,7 +76,10 @@ function PointsCube({ onPositionChange, onPositionSelect, onTargetSelect }) {
         });
       } else if (phase === 2) {
         if (event.key === "Escape") {
-          setPhase(1);
+          setTargetPoint(null); // Réinitialise la cible
+          setHoveredPoint(null); // Réinitialise le survol
+          setHighlightedLine([]); // Réinitialise la ligne
+          setPhase(1); // Retourne à la phase 1
         }
       }
     };
@@ -62,6 +89,23 @@ function PointsCube({ onPositionChange, onPositionSelect, onTargetSelect }) {
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, [phase, selectedPoint, onPositionChange, onPositionSelect]);
+
+  // Gestion du survol pour mettre à jour la ligne jaune
+  const handlePointHover = (position) => {
+    setHoveredPoint(position);
+    if (phase === 2 && selectedPoint) {
+      setHighlightedLine(calculateLine(selectedPoint, position)); // Met à jour la ligne jaune
+    }
+  };
+
+  // Gestion du clic pour valider une cible
+  const handlePointClick = (position) => {
+    if (phase === 2) {
+      setTargetPoint(position); // Fixe la cible sélectionnée
+      onTargetSelect(position); // Notifie le parent de la cible
+      setHighlightedLine([]); // Réinitialise la ligne jaune
+    }
+  };
 
   // Génération des points dans un cube 3x3x3
   const points = [];
@@ -79,18 +123,9 @@ function PointsCube({ onPositionChange, onPositionSelect, onTargetSelect }) {
         <mesh
           key={index}
           position={[x, y, z]}
-          onPointerOver={() => {
-            if (phase === 2) setHoveredPoint([x, y, z]);
-          }}
-          onPointerOut={() => {
-            if (phase === 2) setHoveredPoint(null);
-          }}
-          onClick={() => {
-            if (phase === 2) {
-              setTargetPoint([x, y, z]); // Fixe la cible sélectionnée
-              onTargetSelect([x, y, z]); // Notifie le parent de la cible
-            }
-          }}
+          onPointerOver={() => handlePointHover([x, y, z])}
+          onPointerOut={() => setHoveredPoint(null)}
+          onClick={() => handlePointClick([x, y, z])}
         >
           <sphereGeometry args={[0.1, 16, 16]} />
           <meshBasicMaterial
@@ -105,12 +140,10 @@ function PointsCube({ onPositionChange, onPositionSelect, onTargetSelect }) {
                   y === selectedPoint[1] &&
                   z === selectedPoint[2]
                 ? "green" // Point sélectionné en vert
-                : hoveredPoint &&
-                  phase === 2 &&
-                  x === hoveredPoint[0] &&
-                  y === hoveredPoint[1] &&
-                  z === hoveredPoint[2]
-                ? "yellow" // Suivi à la souris en jaune
+                : highlightedLine.some(
+                    (p) => JSON.stringify(p) === JSON.stringify([x, y, z])
+                  )
+                ? "yellow" // Ligne temporaire en jaune
                 : phase === 1 &&
                   !selectedPoint &&
                   x === activePoint[0] &&
