@@ -2,15 +2,28 @@ import React, { useState, useEffect } from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 
-function PointsCube({ onPositionChange, onPositionSelect, onTargetSelect, setErrorMessage }) {
+function PointsCube({ onPositionChange, onPositionSelect, onTargetSelect, setErrorMessage, setVictoryMessage }) {
   const size = 3; // Taille du cube (3x3x3)
   const spacing = 1; // Espacement entre les points
   const [activePoint, setActivePoint] = useState([0, 0, 0]); // Point actif
   const [hoveredPoint, setHoveredPoint] = useState(null); // Point survolé par la souris
   const [selectedPoint, setSelectedPoint] = useState(null); // Point sélectionné (vert)
-  const [targetPoint, setTargetPoint] = useState(null); // Cible sélectionnée (rouge)
+  const [targetPoint, setTargetPoint] = useState(null); // Cible sélectionnée (rouge ou orange)
   const [highlightedLine, setHighlightedLine] = useState([]); // Points jaunes sur la ligne
+  const [hiddenPoint, setHiddenPoint] = useState([]); // Point caché (gagnant)
+  const [isHiddenPointDiscovered, setIsHiddenPointDiscovered] = useState(false); // Indique si le point caché a été découvert
   const [phase, setPhase] = useState(1); // Phase actuelle : 1 = Sélection, 2 = Suivi
+
+  // Génère un point gagnant aléatoire dans le cube
+  useEffect(() => {
+    const randomPoint = [
+      Math.floor(Math.random() * size) - Math.floor(size / 2),
+      Math.floor(Math.random() * size) - Math.floor(size / 2),
+      Math.floor(Math.random() * size) - Math.floor(size / 2),
+    ];
+    setHiddenPoint(randomPoint);
+    console.log("Hidden Point:", randomPoint); // Debug pour voir le point gagnant
+  }, [size]);
 
   // Vérifie si la cible est alignée avec le point sélectionné (ligne droite ou diagonale)
   const isValidTarget = (start, end) => {
@@ -21,12 +34,15 @@ function PointsCube({ onPositionChange, onPositionSelect, onTargetSelect, setErr
     const dy = Math.abs(y2 - y1);
     const dz = Math.abs(z2 - z1);
 
-    // Vérifie si une seule coordonnée change ou si toutes changent de manière égale (diagonale)
+    // Vérifie les lignes droites et les diagonales (dans un plan ou en 3D)
     return (
-      (dx > 0 && dy === 0 && dz === 0) || // Aligne sur X
-      (dx === 0 && dy > 0 && dz === 0) || // Aligne sur Y
-      (dx === 0 && dy === 0 && dz > 0) || // Aligne sur Z
-      (dx === dy && dy === dz) // Diagonale
+      (dx > 0 && dy === 0 && dz === 0) || // Ligne droite sur X
+      (dx === 0 && dy > 0 && dz === 0) || // Ligne droite sur Y
+      (dx === 0 && dy === 0 && dz > 0) || // Ligne droite sur Z
+      (dx === dy && dz === 0) || // Diagonale dans le plan XY
+      (dx === dz && dy === 0) || // Diagonale dans le plan XZ
+      (dy === dz && dx === 0) || // Diagonale dans le plan YZ
+      (dx === dy && dy === dz) // Diagonale 3D
     );
   };
 
@@ -125,11 +141,22 @@ function PointsCube({ onPositionChange, onPositionSelect, onTargetSelect, setErr
   // Gestion du clic pour valider une cible
   const handlePointClick = (position) => {
     if (phase === 2) {
+      const lineIncludesHiddenPoint = highlightedLine.some(
+        (p) => JSON.stringify(p) === JSON.stringify(hiddenPoint)
+      );
+  
+      if (JSON.stringify(position) === JSON.stringify(hiddenPoint) || lineIncludesHiddenPoint) {
+        setTargetPoint(hiddenPoint); // Fixe la cible trouvée
+        setVictoryMessage("Victoire ! Vous avez trouvé le point caché !");
+        setIsHiddenPointDiscovered(true); // Découverte du point caché
+        onTargetSelect(hiddenPoint); // **Appelle la fonction passée en prop**
+        return;
+      }
+  
       if (isValidTarget(selectedPoint, position)) {
-        setTargetPoint(position); // Fixe la cible sélectionnée
-        onTargetSelect(position); // Notifie le parent de la cible
-        setHighlightedLine([]); // Réinitialise la ligne jaune
-        setErrorMessage(""); // Efface les messages d'erreur
+        setTargetPoint(position); // Cible validée (orange)
+        setErrorMessage(""); // Efface les erreurs
+        onTargetSelect(position); // **Mise à jour ici pour transmettre la cible**
       } else {
         setErrorMessage("Impossible de valider : La cible doit être alignée sur une ligne droite !");
       }
@@ -159,27 +186,20 @@ function PointsCube({ onPositionChange, onPositionSelect, onTargetSelect, setErr
           <sphereGeometry args={[0.1, 16, 16]} />
           <meshBasicMaterial
             color={
-              targetPoint &&
-              x === targetPoint[0] &&
-              y === targetPoint[1] &&
-              z === targetPoint[2]
-                ? "red"
-                : selectedPoint &&
-                  x === selectedPoint[0] &&
-                  y === selectedPoint[1] &&
-                  z === selectedPoint[2]
-                ? "green"
-                : highlightedLine.some(
-                    (p) => JSON.stringify(p) === JSON.stringify([x, y, z])
-                  )
-                ? "yellow"
-                : phase === 1 &&
-                  !selectedPoint &&
-                  x === activePoint[0] &&
-                  y === activePoint[1] &&
-                  z === activePoint[2]
-                ? "blue"
-                : "black"
+              // Priorité des couleurs
+              JSON.stringify([x, y, z]) === JSON.stringify(hiddenPoint) && isHiddenPointDiscovered
+                ? "red" // Le point caché devient rouge s'il est trouvé
+                : JSON.stringify([x, y, z]) === JSON.stringify(selectedPoint)
+                ? "green" // Point validé (vert)
+                : highlightedLine.some((p) => JSON.stringify(p) === JSON.stringify([x, y, z]))
+                ? "yellow" // Ligne jaune
+                : JSON.stringify([x, y, z]) === JSON.stringify(activePoint)
+                ? "blue" // Point actif
+                : JSON.stringify([x, y, z]) === JSON.stringify(hiddenPoint)
+                ? "black" // Point caché non découvert
+                : targetPoint && JSON.stringify(targetPoint) === JSON.stringify([x, y, z])
+                ? "orange" // Cible incorrecte mais validée
+                : "black" // Point inactif
             }
           />
         </mesh>
@@ -190,11 +210,15 @@ function PointsCube({ onPositionChange, onPositionSelect, onTargetSelect, setErr
 
 function Cube3D({ onPositionChange, onPositionSelect, onTargetSelect }) {
   const [errorMessage, setErrorMessage] = useState("");
+  const [victoryMessage, setVictoryMessage] = useState("");
 
   return (
     <>
       <div style={{ color: "red", textAlign: "center", marginBottom: "10px" }}>
         {errorMessage}
+      </div>
+      <div style={{ color: "green", textAlign: "center", marginBottom: "10px" }}>
+        {victoryMessage}
       </div>
       <Canvas style={{ width: "100%", height: "100vh" }}>
         <OrbitControls />
@@ -204,6 +228,7 @@ function Cube3D({ onPositionChange, onPositionSelect, onTargetSelect }) {
           onPositionSelect={onPositionSelect}
           onTargetSelect={onTargetSelect}
           setErrorMessage={setErrorMessage}
+          setVictoryMessage={setVictoryMessage}
         />
       </Canvas>
     </>
