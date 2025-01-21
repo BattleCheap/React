@@ -12,7 +12,7 @@ function PersonalPage() {
 
   const handleFindGame = () => {
     // Redirige vers la page "Trouver une partie"
-    navigate('/find-game');
+    navigate('/cube-size');
   };
 
   return (

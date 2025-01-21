@@ -2,8 +2,14 @@ import React, { useState, useEffect } from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 
-function PointsCube({ onPositionChange, onPositionSelect, onTargetSelect, setErrorMessage, setVictoryMessage }) {
-  const size = 3; // Taille du cube (3x3x3)
+function PointsCube({
+  cubeSize = 3, // Taille dynamique du cube (par défaut 3x3x3)
+  onPositionChange,
+  onPositionSelect,
+  onTargetSelect,
+  setErrorMessage,
+  setVictoryMessage,
+}) {
   const spacing = 1; // Espacement entre les points
   const [activePoint, setActivePoint] = useState([0, 0, 0]); // Point actif
   const [hoveredPoint, setHoveredPoint] = useState(null); // Point survolé par la souris
@@ -17,13 +23,13 @@ function PointsCube({ onPositionChange, onPositionSelect, onTargetSelect, setErr
   // Génère un point gagnant aléatoire dans le cube
   useEffect(() => {
     const randomPoint = [
-      Math.floor(Math.random() * size) - Math.floor(size / 2),
-      Math.floor(Math.random() * size) - Math.floor(size / 2),
-      Math.floor(Math.random() * size) - Math.floor(size / 2),
+      Math.floor(Math.random() * cubeSize) - Math.floor(cubeSize / 2),
+      Math.floor(Math.random() * cubeSize) - Math.floor(cubeSize / 2),
+      Math.floor(Math.random() * cubeSize) - Math.floor(cubeSize / 2),
     ];
     setHiddenPoint(randomPoint);
     console.log("Hidden Point:", randomPoint); // Debug pour voir le point gagnant
-  }, [size]);
+  }, [cubeSize]);
 
   // Vérifie si la cible est alignée avec le point sélectionné (ligne droite ou diagonale)
   const isValidTarget = (start, end) => {
@@ -79,22 +85,22 @@ function PointsCube({ onPositionChange, onPositionSelect, onTargetSelect, setErr
 
           switch (event.key) {
             case "s":
-              newPoint = [x, y, Math.min(z + spacing, Math.floor(size / 2))];
+              newPoint = [x, y, Math.min(z + spacing, Math.floor(cubeSize / 2))];
               break;
             case "z":
-              newPoint = [x, y, Math.max(z - spacing, -Math.floor(size / 2))];
+              newPoint = [x, y, Math.max(z - spacing, -Math.floor(cubeSize / 2))];
               break;
             case "q":
-              newPoint = [Math.max(x - spacing, -Math.floor(size / 2)), y, z];
+              newPoint = [Math.max(x - spacing, -Math.floor(cubeSize / 2)), y, z];
               break;
             case "d":
-              newPoint = [Math.min(x + spacing, Math.floor(size / 2)), y, z];
+              newPoint = [Math.min(x + spacing, Math.floor(cubeSize / 2)), y, z];
               break;
             case "ArrowUp":
-              newPoint = [x, Math.min(y + spacing, Math.floor(size / 2)), z];
+              newPoint = [x, Math.min(y + spacing, Math.floor(cubeSize / 2)), z];
               break;
             case "ArrowDown":
-              newPoint = [x, Math.max(y - spacing, -Math.floor(size / 2)), z];
+              newPoint = [x, Math.max(y - spacing, -Math.floor(cubeSize / 2)), z];
               break;
             case "Enter":
               setSelectedPoint(prev); // Fixe le point sélectionné
@@ -144,30 +150,33 @@ function PointsCube({ onPositionChange, onPositionSelect, onTargetSelect, setErr
       const lineIncludesHiddenPoint = highlightedLine.some(
         (p) => JSON.stringify(p) === JSON.stringify(hiddenPoint)
       );
-  
-      if (JSON.stringify(position) === JSON.stringify(hiddenPoint) || lineIncludesHiddenPoint) {
+
+      if (
+        JSON.stringify(position) === JSON.stringify(hiddenPoint) ||
+        lineIncludesHiddenPoint
+      ) {
         setTargetPoint(hiddenPoint); // Fixe la cible trouvée
         setVictoryMessage("Victoire ! Vous avez trouvé le point caché !");
         setIsHiddenPointDiscovered(true); // Découverte du point caché
-        onTargetSelect(hiddenPoint); // **Appelle la fonction passée en prop**
+        onTargetSelect(hiddenPoint);
         return;
       }
-  
+
       if (isValidTarget(selectedPoint, position)) {
         setTargetPoint(position); // Cible validée (orange)
         setErrorMessage(""); // Efface les erreurs
-        onTargetSelect(position); // **Mise à jour ici pour transmettre la cible**
+        onTargetSelect(position);
       } else {
         setErrorMessage("Impossible de valider : La cible doit être alignée sur une ligne droite !");
       }
     }
   };
 
-  // Génération des points dans un cube 3x3x3
+  // Génération des points dans un cube
   const points = [];
-  for (let x = -Math.floor(size / 2); x <= Math.floor(size / 2); x += spacing) {
-    for (let y = -Math.floor(size / 2); y <= Math.floor(size / 2); y += spacing) {
-      for (let z = -Math.floor(size / 2); z <= Math.floor(size / 2); z += spacing) {
+  for (let x = -Math.floor(cubeSize / 2); x <= Math.floor(cubeSize / 2); x += spacing) {
+    for (let y = -Math.floor(cubeSize / 2); y <= Math.floor(cubeSize / 2); y += spacing) {
+      for (let z = -Math.floor(cubeSize / 2); z <= Math.floor(cubeSize / 2); z += spacing) {
         points.push([x, y, z]);
       }
     }
@@ -187,7 +196,8 @@ function PointsCube({ onPositionChange, onPositionSelect, onTargetSelect, setErr
           <meshBasicMaterial
             color={
               // Priorité des couleurs
-              JSON.stringify([x, y, z]) === JSON.stringify(hiddenPoint) && isHiddenPointDiscovered
+              JSON.stringify([x, y, z]) === JSON.stringify(hiddenPoint) &&
+              isHiddenPointDiscovered
                 ? "red" // Le point caché devient rouge s'il est trouvé
                 : JSON.stringify([x, y, z]) === JSON.stringify(selectedPoint)
                 ? "green" // Point validé (vert)
@@ -197,7 +207,8 @@ function PointsCube({ onPositionChange, onPositionSelect, onTargetSelect, setErr
                 ? "blue" // Point actif
                 : JSON.stringify([x, y, z]) === JSON.stringify(hiddenPoint)
                 ? "black" // Point caché non découvert
-                : targetPoint && JSON.stringify(targetPoint) === JSON.stringify([x, y, z])
+                : targetPoint &&
+                  JSON.stringify(targetPoint) === JSON.stringify([x, y, z])
                 ? "orange" // Cible incorrecte mais validée
                 : "black" // Point inactif
             }
@@ -208,7 +219,7 @@ function PointsCube({ onPositionChange, onPositionSelect, onTargetSelect, setErr
   );
 }
 
-function Cube3D({ onPositionChange, onPositionSelect, onTargetSelect }) {
+function Cube3D({ cubeSize, onPositionChange, onPositionSelect, onTargetSelect }) {
   const [errorMessage, setErrorMessage] = useState("");
   const [victoryMessage, setVictoryMessage] = useState("");
 
@@ -224,6 +235,7 @@ function Cube3D({ onPositionChange, onPositionSelect, onTargetSelect }) {
         <OrbitControls />
         <ambientLight intensity={0.5} />
         <PointsCube
+          cubeSize={cubeSize} // Taille dynamique du cube
           onPositionChange={onPositionChange}
           onPositionSelect={onPositionSelect}
           onTargetSelect={onTargetSelect}
