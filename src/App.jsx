@@ -3,6 +3,7 @@ import Home from "./pages/Home";
 import Login from "./pages/Login";
 import PersonalPage from "./pages/PersonalPage";
 import FindGamePage from "./pages/FindGamePage";
+import Register from "./pages/Register"; // Nouvelle page d'inscription
 import CubeSizePage from "./pages/CubeSizePage";
 
 function App() {
@@ -10,9 +11,10 @@ function App() {
     <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} /> {/* Route pour la page d'inscription */}
       <Route path="/personal" element={<PersonalPage />} />
-      <Route path="/cube-size" element={<CubeSizePage />} />
       <Route path="/find-game" element={<FindGamePage />} />
+      <Route path="/cube-size" element={<CubeSizePage />} />
     </Routes>
   );
 }
