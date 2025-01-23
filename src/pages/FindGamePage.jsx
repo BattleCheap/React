@@ -51,7 +51,7 @@ function FindGamePage() {
 
   // Quitte le jeu
   const quitGame = () => {
-    navigate("/"); // Redirige vers la page d'accueil
+    navigate("/personal"); // Redirige vers la page d'accueil
   };
 
   // Initialise le jeu au chargement
