@@ -8,12 +8,30 @@ function Login() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Logique de connexion (validation simple ici, à remplacer par une API réelle)
-    if ((email === 'test@example.com' && password === 'password') || true) {
-      // alert('Connexion réussie !');
-      navigate('/personal'); // Rediriger vers la page personnelle
-    } else {
-      alert('Email ou mot de passe incorrect.');
+    try {
+      const response = await fetch("http://127.0.0.1:8000/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!response.ok) {
+        // Si la réponse n'est pas "200 OK", on lève une erreur
+        const errorData = await response.json();
+        throw new Error(errorData.detail || "Une erreur s'est produite");
+      }
+
+      const data = await response.json();
+      console.log("Réponse de l'API :", data);
+
+      // Redirection après succès
+      if (data.status === "success" || data.message === "Login successful") {
+        navigate("/personal");
+      }
+    } catch (err) {
+      setError(err.message); // Affichez l'erreur à l'utilisateur
     }
   };
 
