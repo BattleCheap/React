@@ -28,7 +28,7 @@ function Login() {
       console.log("Réponse de l'API :", data);
 
       // Redirection après succès
-      if (data.status === "success" || data.message === "Login successful") {
+      if (data.message === "Connexion réussie") {
         navigate("/personal");
       }
     } catch (err) {
