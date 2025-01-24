@@ -3,13 +3,12 @@ import { useNavigate } from "react-router-dom";
 
 function Register() {
   const [username, setUsername] = useState(""); // Nom d'utilisateur
-  const [name, setName] = useState(""); // Nom
+  const [name, setName] = useState(""); // Nom complet
   const [age, setAge] = useState(""); // Âge
-  const [address, setAddress] = useState(""); // Adresse
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [error, setError] = useState(null);
+  const [email, setEmail] = useState(""); // Email
+  const [password, setPassword] = useState(""); // Mot de passe
+  const [confirmPassword, setConfirmPassword] = useState(""); // Confirmation du mot de passe
+  const [error, setError] = useState(null); // Erreur d'inscription
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -29,8 +28,7 @@ function Register() {
         body: JSON.stringify({
           username,
           name,
-          age,
-          address,
+          age: parseInt(age), // Convertir l'âge en entier
           email,
           password,
         }),
@@ -49,7 +47,7 @@ function Register() {
   };
 
   const handleBack = () => {
-    navigate("/"); // Retourne à la page d'accueil
+    navigate("/"); // Retourner à la page d'accueil
   };
 
   return (
@@ -92,7 +90,7 @@ function Register() {
             htmlFor="name"
             style={{ display: "block", marginBottom: "0.5rem" }}
           >
-            Nom :
+            Nom complet :
           </label>
           <input
             type="text"
@@ -117,23 +115,6 @@ function Register() {
             placeholder="Entrez votre âge"
             value={age}
             onChange={(e) => setAge(e.target.value)}
-            style={{ width: "100%", padding: "10px", fontSize: "16px" }}
-            required
-          />
-        </div>
-        <div style={{ marginBottom: "1rem" }}>
-          <label
-            htmlFor="address"
-            style={{ display: "block", marginBottom: "0.5rem" }}
-          >
-            Adresse :
-          </label>
-          <input
-            type="text"
-            id="address"
-            placeholder="Entrez votre adresse"
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
             style={{ width: "100%", padding: "10px", fontSize: "16px" }}
             required
           />
